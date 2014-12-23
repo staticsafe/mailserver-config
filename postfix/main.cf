@@ -1,0 +1,114 @@
+mydomain = asininetech.com
+myhostname = dresden.$mydomain
+smtpd_tls_cert_file=/etc/ssl/localcerts/digitaltcertifikat/staticsafe.ca.chained.crt
+smtpd_tls_key_file=/etc/ssl/localcerts/digitaltcertifikat/staticsafe.ca.key
+inet_protocols = all
+inet_interfaces = 198.58.123.153, 2600:3c00::f03c:91ff:fedb:7c00, localhost
+# DANE stuff - http://www.postfix.org/TLS_README.html#client_tls_dane
+smtp_tls_security_level = dane
+smtp_dns_support_level = dnssec
+smtp_host_lookup = dns
+smtp_address_preference = any
+smtp_tls_loglevel = 1
+smtpd_tls_loglevel = 1
+smtpd_tls_auth_only = yes
+smtpd_tls_security_level = may
+smtpd_tls_received_header = yes
+recipient_delimiter = +
+
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_local_domain = $myhostname
+#smtpd_sasl_application_name = smtpd
+
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+
+smtpd_recipient_restrictions = 
+        permit_mynetworks,
+        reject_unauth_destination,
+    	reject_invalid_helo_hostname,
+        reject_non_fqdn_helo_hostname,
+    	reject_unauth_pipelining,
+    	reject_non_fqdn_sender,
+    	reject_unknown_sender_domain,
+    	reject_non_fqdn_recipient,
+    	reject_unknown_recipient_domain,
+        reject_rbl_client zen.spamhaus.org,
+        reject_rhsbl_sender rhsbl.sorbs.net,
+        check_policy_service unix:private/policy-spf
+
+smtpd_data_restrictions =
+        reject_unauth_pipelining,
+        permit
+
+content_filter = amavisfeed:[127.0.0.1]:10024
+mydestination = $myhostname, localhost, staticsafe.ca
+mynetworks_style = host
+
+virtual_alias_maps = hash:/etc/postfix/virtual
+home_mailbox = mail/
+mailbox_transport = lmtp:unix:private/dovecot-lmtp
+
+alias_maps = hash:/etc/aliases, hash:/usr/lib64/mailman/data/aliases
+smtpd_milters = inet:127.0.0.1:8891 
+non_smtpd_milters = inet:127.0.0.1:8891 
+policy-spf_time_limit = 3600s
+
+postscreen_dnsbl_action = enforce
+postscreen_greet_action = enforce
+postscreen_dnsbl_sites =
+    zen.spamhaus.org*3
+    b.barracudacentral.org*2
+    bl.spameatingmonkey.net*2
+    bl.spamcop.net
+    swl.spamhaus.org*-4
+    list.dnswl.org=127.[0..255].[0..255].0*-2
+    list.dnswl.org=127.[0..255].[0..255].1*-3
+    list.dnswl.org=127.[0..255].[0..255].[2..255]*-4
+postscreen_dnsbl_threshold = 3
+postscreen_access_list = cidr:/etc/postfix/postscreen_access.cidr
+postscreen_blacklist_action = enforce
+#postscreen_pipelining_enable = yes
+#postscreen_bare_newline_enable = yes
+#postscreen_non_smtp_command_enable = yes
+
+
+# LOCAL PATHNAME INFORMATION
+#
+# The queue_directory specifies the location of the Postfix queue.
+# This is also the root directory of Postfix daemons that run chrooted.
+# See the files in examples/chroot-setup for setting up Postfix chroot
+# environments on different UNIX systems.
+#
+queue_directory = /var/spool/postfix
+
+# The command_directory parameter specifies the location of all
+# postXXX commands.
+#
+command_directory = /usr/sbin
+
+# The daemon_directory parameter specifies the location of all Postfix
+# daemon programs (i.e. programs listed in the master.cf file). This
+# directory must be owned by root.
+#
+daemon_directory = /usr/libexec/postfix
+
+# The data_directory parameter specifies the location of Postfix-writable
+# data files (caches, random numbers). This directory must be owned
+# by the mail_owner account (see below).
+#
+data_directory = /var/lib/postfix
+
+# QUEUE AND PROCESS OWNERSHIP
+#
+# The mail_owner parameter specifies the owner of the Postfix queue
+# and of most Postfix daemon processes.  Specify the name of a user
+# account THAT DOES NOT SHARE ITS USER OR GROUP ID WITH OTHER ACCOUNTS
+# AND THAT OWNS NO OTHER FILES OR PROCESSES ON THE SYSTEM.  In
+# particular, don't specify nobody or daemon. PLEASE USE A DEDICATED
+# USER.
+#
+mail_owner = postfix
